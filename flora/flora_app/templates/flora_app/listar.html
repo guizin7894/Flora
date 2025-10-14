@@ -1,0 +1,89 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Lista de Produtos</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="icon" type="image/png" sizes="32x32" href="{% static 'flora_app\imagens\icon.png' %}">
+</head>
+<body class="bg-white">
+
+<div class="container py-4">
+    <h2 class="fw-bold text-danger mb-4 text-center">Lista de Produtos</h2>
+
+    <!-- Barra de busca -->
+    <div class="d-flex justify-content-center mb-4">
+        <input type="text" 
+                id="busca" 
+                class="form-control w-50" 
+                placeholder="Buscar por nome, preço ou código..."
+                onkeyup="filtrarProdutos()">
+    </div>
+
+    <!-- Tabela de produtos -->
+    <table class="table table-striped table-hover border align-middle">
+        <thead class="table-warning text-dark text-center">
+            <tr>
+                <th>Nome</th>
+                <th>Quantidade</th>
+                <th>Preço Unitário</th>
+                <th>Código de Barras</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody id="tabela-produtos" class="text-center">
+            {% for p in produtos %}
+            <tr>
+                <td>{{ p.nomeProduto }}</td>
+                <td>{{ p.quantidade }}</td>
+                <td>R$ {{ p.preco_unitario }}</td>
+                <td>{{ p.CodBarras }}</td>
+                <td>
+                    <a href="{% url 'editar_produto' p.id %}" class="btn btn-sm btn-warning text-dark fw-semibold me-1">Editar</a>
+                    <a href="{% url 'excluir_produto' p.id %}" class="btn btn-sm btn-danger fw-semibold">Excluir</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Mensagem quando não há resultados -->
+    <div id="nenhum-resultado" class="text-center text-muted py-3 d-none">
+        Nenhum produto encontrado.
+    </div>
+
+    <!-- Botões inferiores -->
+    <div class="d-flex justify-content-between mt-4">
+        <a href="{% url 'home' %}" class="btn btn-danger fw-semibold">Cancelar</a>
+        <a href="{% url 'criar_produto' %}" class="btn btn-success fw-semibold">Adicionar Novo Produto</a>
+    </div>
+</div>
+
+<!-- Script da busca em tempo real -->
+<script>
+    function filtrarProdutos() {
+        const input = document.getElementById('busca').value.toLowerCase();
+        const linhas = document.querySelectorAll('#tabela-produtos tr');
+        const msg = document.getElementById('nenhum-resultado');
+        let algumVisivel = false;
+
+        linhas.forEach(linha => {
+            const nome = linha.cells[0].textContent.toLowerCase();
+            const preco = linha.cells[2].textContent.toLowerCase();
+            const cod = linha.cells[3].textContent.toLowerCase();
+
+            if (nome.includes(input) || preco.includes(input) || cod.includes(input)) {
+                linha.style.display = '';
+                algumVisivel = true;
+            } else {
+                linha.style.display = 'none';
+            }
+        });
+
+        msg.classList.toggle('d-none', algumVisivel);
+    }
+</script>
+
+</body>
+</html>

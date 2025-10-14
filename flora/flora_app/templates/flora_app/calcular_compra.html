@@ -1,0 +1,131 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Simulador de Compra</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="icon" type="image/png" sizes="32x32" href="{% static 'flora_app\imagens\icon.png' %}">
+</head>
+<body class="bg-light">
+
+<div class="container py-4">
+
+    <h2 class="text-center fw-bold text-danger mb-4">Simulador de Compra</h2>
+
+    <!-- Campo de busca -->
+    <div class="d-flex justify-content-center mb-4">
+        <input type="text" id="busca" class="form-control w-50" 
+                placeholder="Buscar por nome, preço ou código de barras..." 
+                onkeyup="filtrarProdutos()">
+    </div>
+
+    <form method="post" action="{% url 'calcular_compra' %}">
+        {% csrf_token %}
+        <div class="table-responsive">
+            <table class="table table-striped table-hover border align-middle text-center">
+                <thead class="table-warning">
+                    <tr>
+                        <th>Selecionar</th>
+                        <th>Produto</th>
+                        <th>Preço</th>
+                        <th>Código de Barras</th>
+                        <th>Quantidade</th>
+                    </tr>
+                </thead>
+                <tbody id="tabela-produtos">
+                    {% for produto in produtos %}
+                    <tr>
+                        <td><input type="checkbox" name="produtos" value="{{ produto.id }}" class="produto-check"></td>
+                        <td>{{ produto.nomeProduto }}</td>
+                        <td class="preco">{{ produto.preco_unitario }}</td>
+                        <td>{{ produto.CodBarras }}</td>
+                        <td>
+                            <input type="number" name="quantidade_{{ produto.id }}" 
+                                   value="0" min="0" max="{{ produto.quantidade }}" 
+                                   class="form-control text-center quantidade mx-auto" style="width: 80px;">
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Campo do valor pago -->
+        <div class="my-3">
+            <label class="fw-semibold">Valor pago:</label>
+            <input type="number" step="0.01" id="valorPago" name="valor_pago" placeholder="0.00" 
+                   class="form-control w-25 d-inline-block text-center" oninput="atualizarTroco()">
+        </div>
+
+        <!-- Resultado automático -->
+        <div class="p-3 bg-danger text-white rounded">
+            <h4 class="fw-bold mb-3">Resumo da Compra</h4>
+            <p><strong>Total:</strong> R$ <span id="total">0.00</span></p>
+            <p><strong>Valor pago:</strong> R$ <span id="valorPagoExibido">0.00</span></p>
+            <p><strong>Troco:</strong> R$ <span id="troco">0.00</span></p>
+        </div>
+
+        <div class="text-end mt-3">
+            <button type="submit" class="btn btn-success fw-semibold">Finalizar Compra</button>
+            <a href="{% url 'home' %}" class="btn btn-danger fw-semibold">Cancelar</a>
+        </div>
+    </form>
+</div>
+
+<!-- Scripts -->
+<script>
+    function filtrarProdutos() {
+        const filtro = document.getElementById('busca').value.toLowerCase();
+        const linhas = document.querySelectorAll('#tabela-produtos tr');
+
+        linhas.forEach(linha => {
+            const nomeProduto = linha.cells[1].textContent.toLowerCase();
+            const preco = linha.cells[2].textContent.toLowerCase();
+            const codBarras = linha.cells[3].textContent.toLowerCase();
+
+            linha.style.display = (
+                nomeProduto.includes(filtro) ||
+                preco.includes(filtro) ||
+                codBarras.includes(filtro)
+            ) ? '' : 'none';
+        });
+    }
+
+    function atualizarTotal() {
+        let total = 0;
+        document.querySelectorAll('#tabela-produtos tr').forEach(linha => {
+            const checkbox = linha.querySelector('.produto-check');
+            const precoElem = linha.querySelector('.preco');
+            const qtdElem = linha.querySelector('.quantidade');
+
+            if (checkbox && checkbox.checked) {
+                const preco = parseFloat(precoElem.textContent.replace(',', '.')) || 0;
+                const qtd = parseFloat(qtdElem.value) || 0;
+                total += preco * qtd;
+            }
+        });
+
+        document.getElementById('total').textContent = total.toFixed(2);
+        atualizarTroco();
+    }
+
+    function atualizarTroco() {
+        const total = parseFloat(document.getElementById('total').textContent) || 0;
+        const valorPago = parseFloat(document.getElementById('valorPago').value) || 0;
+        const troco = valorPago - total;
+
+        document.getElementById('valorPagoExibido').textContent = valorPago.toFixed(2);
+        document.getElementById('troco').textContent = troco.toFixed(2);
+    }
+
+    document.addEventListener('input', e => {
+        if (e.target.classList.contains('produto-check') ||
+            e.target.classList.contains('quantidade')) {
+            atualizarTotal();
+        }
+    });
+</script>
+
+</body>
+</html>
